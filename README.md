@@ -64,13 +64,27 @@ All demo accounts use the password **`password`** (change them before any real u
 The consultation revision is reflected too. Distribution, funding donation, and beneficiaries are one linked entry
 form, and dashboard shortcut cards put every entry form two steps from login.
 
+## Putting it online (production)
+
+Do **not** run `php artisan db:seed` on a live site: the demo data includes accounts that use the password `password`.
+Use the production setup instead, which creates the standard units of measure and one Administrator, and nothing else.
+
+1. Set these environment variables on the host (pick your own password; never commit it):
+   `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, plus `APP_ENV=production`, `APP_DEBUG=false` and your database settings.
+   On Laravel Cloud (or any host with a gateway in front of the app) also set `TRUSTED_PROXIES=*`.
+2. Deploy command order: `php artisan migrate --force`, then `php artisan bayanihan:install`.
+3. Sign in with the Administrator account, then create the real accounts under *Users & Roles*.
+
+`bayanihan:install` is safe to run on every deploy: it never changes an existing account or password.
+Offline mode on phones needs the site to be served over HTTPS.
+
 ## Tests
 
 ```bash
 php artisan test
 ```
 
-31 feature tests (306 assertions) cover each functional requirement plus a check that every screen opens for the
+79 feature tests (498 assertions) cover each functional requirement plus a check that every screen opens for the
 roles allowed to see it, and is refused (403) for everyone else. Tests run on an in-memory SQLite database and never
 touch the MySQL data.
 

@@ -20,6 +20,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo('/login');
         $middleware->redirectUsersTo('/dashboard');
         $middleware->appendToGroup('web', EnsureUserIsActive::class);
+
+        // Behind a host's gateway or load balancer (e.g. Laravel Cloud) set TRUSTED_PROXIES=* so https links
+        // and visitor IPs are read correctly. Left unset on a plain server, where trusting it would let
+        // visitors fake their IP address.
+        if ($proxies = env('TRUSTED_PROXIES')) {
+            $middleware->trustProxies(at: $proxies === '*' ? '*' : array_map('trim', explode(',', $proxies)));
+        }
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Denied actions are logged for audit (FR08); the user only sees a generic 403 page.
