@@ -40,14 +40,22 @@
             </div>
 
             <x-field name="item_name" label="Relief item / goods" required class="span-2 in-kind-only">
-                <input id="item_name" type="text" name="item_name" value="{{ old('item_name') }}" maxlength="150" placeholder="e.g. Rice, Canned Goods, Bottled Water"
+                {{-- Type any goods name, or pick a suggestion from the list (click the field or start typing). --}}
+                <input id="item_name" type="text" name="item_name" value="{{ old('item_name') }}" maxlength="150" list="item-suggestions" autocomplete="off"
+                       placeholder="Type or choose, e.g. Rice, Canned Goods, Bottled Water"
                        @class(['is-invalid' => $errors->has('item_name')])>
+                <datalist id="item-suggestions">
+                    @foreach ($itemSuggestions as $suggestion)
+                        <option value="{{ $suggestion }}"></option>
+                    @endforeach
+                </datalist>
             </x-field>
 
             <x-field name="quantity" label="Amount / quantity" required>
-                <input id="quantity" type="number" name="quantity" value="{{ old('quantity') }}" min="0.01" step="0.01" required placeholder="e.g. 500"
+                {{-- The arrows step by 1,000 for cash and by 10 for goods (set in the script below); any number can still be typed, including decimals. --}}
+                <input id="quantity" type="number" name="quantity" value="{{ old('quantity') }}" min="0" step="10" required placeholder="e.g. 500"
                        @class(['is-invalid' => $errors->has('quantity')])>
-                <div class="field-hint cash-only">Amount in Philippine pesos (₱).</div>
+                <div class="field-hint cash-only">Amount in Philippine pesos (PHP).</div>
             </x-field>
             {{-- FR05: in-kind goods must use one standardized unit from this list. --}}
             <x-field name="unit_id" label="Unit" required class="in-kind-only" hint="Count goods in the unit they will be distributed in, so balances match.">
@@ -99,6 +107,10 @@
             const isCash = form.querySelector('input[name=type]:checked')?.value === 'cash';
             form.querySelectorAll('.in-kind-only').forEach((el) => { el.hidden = isCash; });
             form.querySelectorAll('.cash-only').forEach((el) => { el.hidden = !isCash; });
+            // Cash is an amount in pesos; goods are a quantity in a unit.
+            const quantityLabel = form.querySelector('label[for="quantity"]');
+            if (quantityLabel) quantityLabel.firstChild.nodeValue = isCash ? 'Amount (PHP) ' : 'Quantity ';
+            document.getElementById('quantity').step = isCash ? 1000 : 10;
             document.getElementById('unit_id').required = !isCash;
             document.getElementById('item_name').required = !isCash;
         }
@@ -108,6 +120,20 @@
         }
         form.querySelectorAll('input[name=type]').forEach((r) => r.addEventListener('change', syncType));
         program.addEventListener('change', syncActivities);
+
+        // Choosing or typing a known item selects the unit that normally goes with it (until you pick a unit yourself).
+        const itemUnits = @json($itemUnits);
+        const item = document.getElementById('item_name');
+        const unit = document.getElementById('unit_id');
+        let unitChosenByUser = unit.value !== '';
+        unit.addEventListener('change', (e) => { if (e.isTrusted) unitChosenByUser = true; });
+        function suggestUnit() {
+            const id = itemUnits[item.value.trim().toLowerCase()];
+            if (id && !unitChosenByUser) unit.value = String(id);
+        }
+        item.addEventListener('input', suggestUnit);
+        item.addEventListener('change', suggestUnit);
+
         syncType();
         syncActivities();
     })();

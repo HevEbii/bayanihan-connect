@@ -92,6 +92,28 @@ class PagesRenderTest extends TestCase
         }
     }
 
+    public function test_relief_item_field_suggests_known_goods_once_each(): void
+    {
+        $html = $this->actingAs(User::where('role', Role::FINANCE)->first())
+            ->get(route('donations.create'))->assertOk()
+            ->assertSee('list="item-suggestions"', false)
+            ->assertSee('<option value="Family Food Packs">', false)   // from existing records
+            ->assertSee('<option value="Cooking Oil">', false)         // common goods
+            ->getContent();
+
+        // "Hygiene Kits" exists in donations, distributions and the common list, but is offered once.
+        $this->assertSame(1, substr_count($html, '<option value="Hygiene Kits">'));
+    }
+
+    public function test_distribution_form_offers_the_same_item_suggestions(): void
+    {
+        $this->actingAs(User::where('role', Role::COORDINATOR)->first())
+            ->get(route('distributions.create'))->assertOk()
+            ->assertSee('list="item-suggestions"', false)
+            ->assertSee('<option value="Family Food Packs">', false)
+            ->assertSee('<option value="Bottled Water">', false);
+    }
+
     public function test_donor_menu_has_my_impact_but_no_duplicate_dashboard_link(): void
     {
         $donor = User::where('role', Role::DONOR)->first();

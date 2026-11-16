@@ -116,7 +116,7 @@ class DatabaseSeeder extends Seeder
             'supplies' => $don($donors['rotary'], $programs['education'], 'in_kind', 300, 20, 'School Supply Kits', 'Kit'),
             'cash3' => $don($donors['lim'], $programs['education'], 'cash', 25000, 8),
             'cash4' => $don($donors['grace'], $programs['workshop'], 'cash', 40000, 5, null, null, $a['work1']),
-            'rice2' => $don($donors['phil'], $programs['food'], 'in_kind', 60, 4, 'Rice (25kg)', 'Sack'),
+            'rice2' => $don($donors['phil'], $programs['food'], 'in_kind', 60, 4, 'Rice', 'Sack'),
         ];
 
         // ---- Distributions (through the same rules the app enforces) ----

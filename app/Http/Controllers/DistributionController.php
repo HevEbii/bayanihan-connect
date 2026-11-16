@@ -10,6 +10,7 @@ use App\Models\Program;
 use App\Models\Unit;
 use App\Services\DistributionRecorder;
 use App\Support\Audit;
+use App\Support\ItemSuggestions;
 use Illuminate\Http\Request;
 
 /** FR03 - distributions logged against the donations that funded them. */
@@ -48,6 +49,8 @@ class DistributionController extends Controller
             'beneficiaries' => Beneficiary::orderBy('last_name')->orderBy('first_name')
                 ->get(['id', 'code', 'first_name', 'last_name', 'barangay', 'program_id']),
             'selectedActivity' => $request->integer('activity') ?: null,
+            'itemSuggestions' => ItemSuggestions::all(),
+            'itemUnits' => ItemSuggestions::units(),
         ]);
     }
 

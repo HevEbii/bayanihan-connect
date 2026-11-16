@@ -8,6 +8,7 @@ use App\Models\Donor;
 use App\Models\Program;
 use App\Models\Unit;
 use App\Support\Audit;
+use App\Support\ItemSuggestions;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -42,6 +43,8 @@ class DonationController extends Controller
             'activities' => Activity::with('program')->where('status', '!=', 'cancelled')->orderByDesc('activity_date')->get(),
             'units' => Unit::orderBy('name')->get(),
             'selectedDonor' => $request->integer('donor') ?: null,
+            'itemSuggestions' => ItemSuggestions::all(),
+            'itemUnits' => ItemSuggestions::units(),
         ]);
     }
 

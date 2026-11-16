@@ -40,13 +40,20 @@
                 </select>
             </x-field>
             <x-field name="item_name" label="Relief item / distribution type" required class="span-2">
-                <input id="item_name" type="text" name="item_name" value="{{ old('item_name') }}" maxlength="150" required placeholder="e.g. Rice, Canned Goods, Family Food Packs"
+                {{-- Type any goods name, or pick a suggestion from the list (the same list the donation form uses). --}}
+                <input id="item_name" type="text" name="item_name" value="{{ old('item_name') }}" maxlength="150" required list="item-suggestions" autocomplete="off"
+                       placeholder="Type or choose, e.g. Rice, Canned Goods, Family Food Packs"
                        @class(['is-invalid' => $errors->has('item_name')])>
+                <datalist id="item-suggestions">
+                    @foreach ($itemSuggestions as $suggestion)
+                        <option value="{{ $suggestion }}"></option>
+                    @endforeach
+                </datalist>
             </x-field>
         </div>
         <div class="form-grid-3" style="margin-top:18px">
             <x-field name="quantity" label="Amount / quantity" required>
-                <input id="quantity" type="number" name="quantity" value="{{ old('quantity') }}" min="0.01" step="0.01" required placeholder="e.g. 500"
+                <input id="quantity" type="number" name="quantity" value="{{ old('quantity') }}" min="0" step="10" required placeholder="e.g. 500"
                        @class(['is-invalid' => $errors->has('quantity')])>
             </x-field>
             <x-field name="unit_id" label="Unit" required>
@@ -80,7 +87,7 @@
                         @error("funding.$i.donation_id")<div class="field-error">{{ $message }}</div>@enderror
                     </div>
                     <div>
-                        <input type="number" name="funding[{{ $i }}][amount]" value="{{ $row['amount'] ?? '' }}" min="0.01" step="0.01" placeholder="Amount drawn"
+                        <input type="number" name="funding[{{ $i }}][amount]" value="{{ $row['amount'] ?? '' }}" min="0" step="10" placeholder="Amount drawn"
                                aria-label="Amount drawn" data-amount @class(['is-invalid' => $errors->has("funding.$i.amount")])>
                         @error("funding.$i.amount")<div class="field-error">{{ $message }}</div>@enderror
                     </div>
@@ -144,9 +151,10 @@
             });
             if (select.selectedOptions[0]?.disabled) select.value = '';
             const d = byId[select.value];
-            meta.textContent = d ? (d.cash ? `Cash · ${d.remainingLabel} available (amount in ₱)` : `In-kind · ${d.remainingLabel} available`) : '';
+            meta.textContent = d ? (d.cash ? `Cash · ${d.remainingLabel} available (amount in PHP)` : `In-kind · ${d.remainingLabel} available`) : '';
             amount.max = d ? d.remaining : '';
-            amount.placeholder = d ? (d.cash ? 'Pesos drawn' : `${d.unitName} drawn`) : 'Amount drawn';
+            amount.step = d && d.cash ? 1000 : 10; // pesos step by 1,000, goods by 10
+            amount.placeholder = d ? (d.cash ? 'PHP drawn' : `${d.unitName} drawn`) : 'Amount drawn';
         }
         function refreshAll() { lines.querySelectorAll('[data-line]').forEach(refreshLine); filterBeneficiaries(); }
 
@@ -185,6 +193,22 @@
         lines.addEventListener('change', (e) => { if (e.target.matches('[data-donation]')) refreshLine(e.target.closest('[data-line]')); });
         activity.addEventListener('change', refreshAll);
         unit.addEventListener('change', refreshAll);
+
+        // Choosing or typing a known item selects the unit that normally goes with it (until you pick a unit yourself).
+        const itemUnits = @json($itemUnits);
+        const item = document.getElementById('item_name');
+        let unitChosenByUser = unit.value !== '';
+        unit.addEventListener('change', (e) => { if (e.isTrusted) unitChosenByUser = true; });
+        function suggestUnit() {
+            const id = itemUnits[item.value.trim().toLowerCase()];
+            if (id && !unitChosenByUser && unit.value !== String(id)) {
+                unit.value = String(id);
+                unit.dispatchEvent(new Event('change', { bubbles: true })); // re-filters the funding donations
+            }
+        }
+        item.addEventListener('input', suggestUnit);
+        item.addEventListener('change', suggestUnit);
+
         benSearch.addEventListener('input', filterBeneficiaries);
         benList.addEventListener('change', filterBeneficiaries);
         document.getElementById('distribution-form').addEventListener('offline-saved', refreshAll);
