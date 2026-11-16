@@ -134,6 +134,7 @@ p { margin: 0; }
 .btn:focus-visible, .nav-link:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid #93c5fd; outline-offset: 1px; }
 .btn-outline { background: var(--surface); color: var(--text); border-color: var(--border-strong); }
 .btn-outline:hover { background: var(--surface-2); }
+.btn-outline.is-active, .btn-outline.is-active:hover { background: var(--brand); color: #fff; border-color: var(--brand); }
 .btn-brand { background: var(--brand); border-color: var(--brand); }
 .btn-brand:hover { background: #166534; }
 .btn-danger { background: var(--surface); color: var(--danger); border-color: #fda29b; }

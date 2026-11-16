@@ -92,6 +92,18 @@ class PagesRenderTest extends TestCase
         }
     }
 
+    public function test_donor_menu_has_my_impact_but_no_duplicate_dashboard_link(): void
+    {
+        $donor = User::where('role', Role::DONOR)->first();
+        $this->actingAs($donor)->get(route('impact'))->assertOk()
+            ->assertSee('My Impact')
+            ->assertDontSee('<span>Dashboard</span>', false);
+
+        // Everyone else still has a Dashboard link.
+        $this->actingAs(User::where('role', Role::COORDINATOR)->first())->get(route('dashboard'))->assertOk()
+            ->assertSee('<span>Dashboard</span>', false);
+    }
+
     public function test_confirmation_page_shows_snapshot_after_save(): void
     {
         $coordinator = User::where('email', 'coordinator@bayanihan.test')->first();

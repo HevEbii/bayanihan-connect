@@ -14,7 +14,7 @@
         </div>
     </div>
 
-    <form class="card card-body no-print" method="GET" action="{{ route('reports.index') }}" style="margin-bottom:20px" novalidate>
+    <form id="report-form" class="card card-body no-print" method="GET" action="{{ route('reports.index') }}" style="margin-bottom:20px" novalidate>
         <div class="form-grid-3">
             <x-field name="from" label="From" required>
                 <input id="from" type="date" name="from" value="{{ $from }}" required @class(['is-invalid' => $errors->has('from')])>
@@ -26,7 +26,10 @@
                 <span class="label">Quick ranges</span>
                 <div style="display:flex;gap:6px;flex-wrap:wrap">
                     @foreach (['This month' => [today()->startOfMonth(), today()], 'Last 90 days' => [today()->subDays(90), today()], 'This year' => [today()->startOfYear(), today()]] as $label => [$a, $b])
-                        <a class="btn btn-sm btn-outline" href="{{ route('reports.index', ['from' => $a->format('Y-m-d'), 'to' => $b->format('Y-m-d'), 'programs' => $selected->all()]) }}">{{ $label }}</a>
+                        {{-- The range that matches the generated report is highlighted. --}}
+                        @php $active = $report && $from === $a->format('Y-m-d') && $to === $b->format('Y-m-d'); @endphp
+                        <a @class(['btn', 'btn-sm', 'btn-outline', 'is-active' => $active]) @if ($active) aria-current="true" @endif
+                           href="{{ route('reports.index', ['from' => $a->format('Y-m-d'), 'to' => $b->format('Y-m-d'), 'programs' => $selected->all()]) }}">{{ $label }}</a>
                     @endforeach
                 </div>
             </div>
@@ -105,3 +108,13 @@
         @endunless
     @endif
 @endsection
+
+@push('scripts')
+<script>
+    // Ticking or unticking a program regenerates the report straight away, so the page, Export CSV and
+    // Print always match the boxes. (Dates still use the Generate Report button.)
+    document.querySelectorAll('#report-form input[name="programs[]"]').forEach((box) => {
+        box.addEventListener('change', () => document.getElementById('report-form').requestSubmit());
+    });
+</script>
+@endpush

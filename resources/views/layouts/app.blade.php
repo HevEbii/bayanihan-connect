@@ -55,7 +55,8 @@
                 $unread = Gate::allows('messages.use') ? $user->unreadMessagesCount() : 0;
             @endphp
             @foreach ($nav as [$route, $label, $icon, $ability, $active])
-                @if (! $ability || Gate::allows($ability))
+                {{-- Donors have no separate dashboard (it redirects to My Impact), so skip the duplicate link. --}}
+                @if ((! $ability || Gate::allows($ability)) && ! ($route === 'dashboard' && $user->hasRole('donor')))
                     <a href="{{ route($route) }}" @class(['nav-link', 'active' => request()->routeIs($active)])>
                         <x-icon :name="$icon"/> <span>{{ $label }}</span>
                         @if ($route === 'messages.index' && $unread)
