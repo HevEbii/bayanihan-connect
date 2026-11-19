@@ -70,7 +70,7 @@ class PagesRenderTest extends TestCase
             ['impact.view', route('impact')],
             ['users.manage', route('users.index')],
             ['users.manage', route('users.create')],
-            ['users.manage', route('users.edit', User::first())],
+            ['users.manage', route('users.edit', User::where('role', '!=', Role::ADMIN)->first())],
             ['audit.view', route('audit.index')],
             ['settings.manage', route('units.index')],
         ];

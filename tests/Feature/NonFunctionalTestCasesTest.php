@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AuditLog;
 use App\Models\Beneficiary;
 use App\Models\Donation;
 use App\Models\Program;
@@ -114,5 +115,54 @@ class NonFunctionalTestCasesTest extends TestCase
             'household_size' => 2, 'category' => 'senior'])
             ->assertSee('Beneficiary Registered Successfully')->assertSee('Entry Log Snapshot')
             ->assertSee('Record Another Entry')->assertSee('Back to Dashboard');
+    }
+
+    public function test_NFT_SEC_07_login_limit_also_applies_per_account_when_ip_changes(): void
+    {
+        for ($i = 0; $i < 10; $i++) {
+            $this->withServerVariables(['REMOTE_ADDR' => "10.0.0.$i"])
+                ->post('/login', ['email' => 'coordinator@bayanihan.test', 'password' => 'wrong-'.$i]);
+        }
+        // Correct password from a new IP is still refused until the limit expires.
+        $this->withServerVariables(['REMOTE_ADDR' => '10.0.1.1'])
+            ->post('/login', ['email' => 'coordinator@bayanihan.test', 'password' => 'password'])
+            ->assertSessionHasErrors('email');
+        $this->assertGuest();
+    }
+
+    public function test_NFT_SEC_08_failed_sign_ins_are_audit_logged(): void
+    {
+        $this->post('/login', ['email' => 'coordinator@bayanihan.test', 'password' => 'wrong']);
+
+        $log = AuditLog::where('action', 'auth.failed')->latest('id')->firstOrFail();
+        $this->assertNull($log->user_id);
+        $this->assertStringContainsString('coordinator@bayanihan.test', $log->description);
+        $this->assertStringNotContainsString('wrong', $log->description);
+    }
+
+    public function test_NFT_SEC_09_security_headers_are_sent(): void
+    {
+        $this->get('/login')->assertOk()
+            ->assertHeader('X-Frame-Options', 'DENY')
+            ->assertHeader('X-Content-Type-Options', 'nosniff')
+            ->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
+            ->assertHeader('Content-Security-Policy');
+        $this->assertStringContainsString("frame-ancestors 'none'", $this->get('/login')->headers->get('Content-Security-Policy'));
+    }
+
+    public function test_NFT_SEC_10_director_cannot_change_an_administrator_account(): void
+    {
+        $director = User::where('email', 'director@bayanihan.test')->firstOrFail();
+        $admin = User::where('email', 'admin@bayanihan.test')->firstOrFail();
+
+        $this->actingAs($director)->get(route('users.edit', $admin))->assertForbidden();
+        $this->actingAs($director)->put(route('users.update', $admin), [
+            'name' => $admin->name, 'email' => $admin->email, 'role' => 'coordinator', 'is_active' => 0,
+        ])->assertForbidden();
+
+        $admin->refresh();
+        $this->assertSame('admin', $admin->role);
+        $this->assertTrue((bool) $admin->is_active);
+        $this->actingAs($director)->get(route('users.index'))->assertSee('Admin only');
     }
 }

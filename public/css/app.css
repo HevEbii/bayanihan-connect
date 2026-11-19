@@ -158,7 +158,7 @@ input::placeholder, textarea::placeholder { color: #9aa1ac; }
 .is-invalid { border-color: var(--danger) !important; background: #fffbfa !important; }
 .field-error { color: var(--danger); font-size: .83rem; margin-top: 6px; font-weight: 500; }
 .field-hint { color: var(--muted); font-size: .8rem; margin-top: 6px; }
-.check { display: flex; align-items: center; gap: 8px; font-size: .92rem; }
+.check, .field label.check { display: flex; align-items: center; gap: 8px; margin: 0; font-size: .92rem; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text); }
 .check input { width: 18px; height: 18px; }
 .form-foot { display: flex; justify-content: flex-end; gap: 10px; padding-top: 20px; margin-top: 22px; border-top: 1px solid var(--border); flex-wrap: wrap; }
 .segmented { display: inline-flex; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); overflow: hidden; }

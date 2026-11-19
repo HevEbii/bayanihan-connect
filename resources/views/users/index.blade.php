@@ -37,7 +37,13 @@
                     <td>{{ $u->email }}</td>
                     <td><span class="tag">{{ $u->roleLabel() }}</span></td>
                     <td><span @class(['tag', 'tag-green' => $u->is_active, 'tag-red' => ! $u->is_active])>{{ $u->is_active ? 'Active' : 'Deactivated' }}</span></td>
-                    <td class="num"><a class="btn btn-sm btn-outline" href="{{ route('users.edit', $u) }}">Edit</a></td>
+                    <td class="num">
+                        @if ($u->hasRole(\App\Support\Role::ADMIN) && ! auth()->user()->hasRole(\App\Support\Role::ADMIN))
+                            <small style="color:var(--muted)">Admin only</small>
+                        @else
+                            <a class="btn btn-sm btn-outline" href="{{ route('users.edit', $u) }}">Edit</a>
+                        @endif
+                    </td>
                 </tr>
             @endforeach
             </tbody>

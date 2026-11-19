@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureUserIsActive;
+use App\Http\Middleware\SecurityHeaders;
 use App\Support\Audit;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Application;
@@ -20,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo('/login');
         $middleware->redirectUsersTo('/dashboard');
         $middleware->appendToGroup('web', EnsureUserIsActive::class);
+        $middleware->append(SecurityHeaders::class);
 
         // Behind a host's gateway or load balancer (e.g. Laravel Cloud) set TRUSTED_PROXIES=* so https links
         // and visitor IPs are read correctly. Left unset on a plain server, where trusting it would let

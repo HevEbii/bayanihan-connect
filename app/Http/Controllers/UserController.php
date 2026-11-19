@@ -49,13 +49,16 @@ class UserController extends Controller
         return redirect()->route('users.index')->with('status', "Account created for {$user->name}.");
     }
 
-    public function edit(User $user)
+    public function edit(Request $request, User $user)
     {
+        $this->ensureCanEdit($request, $user);
+
         return view('users.form', $this->formData($user));
     }
 
     public function update(Request $request, User $user)
     {
+        $this->ensureCanEdit($request, $user);
         $data = $this->validated($request, $user);
 
         if ($user->is($request->user()) && ($data['role'] !== $user->role || ! $data['is_active'])) {
@@ -77,6 +80,12 @@ class UserController extends Controller
         Audit::record('user.updated', "Updated account for {$user->name} ({$user->roleLabel()})", $user);
 
         return redirect()->route('users.index')->with('status', "Account for {$user->name} updated.");
+    }
+
+    /** Only an administrator may edit an administrator account, so a Director cannot demote, deactivate or reset an admin. */
+    private function ensureCanEdit(Request $request, User $user): void
+    {
+        abort_if($user->hasRole(Role::ADMIN) && ! $request->user()->hasRole(Role::ADMIN), 403, 'Only an administrator can change an administrator account.');
     }
 
     private function formData(User $user): array
